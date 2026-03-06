@@ -299,3 +299,64 @@ video.media-thumb {
   max-height: 100%;
   border-radius: 8px;
 }
+
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-btn {
+  background: none;
+  border: 1px solid #d0c4b0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: #8a7560;
+  cursor: pointer;
+  font-family: inherit;
+}
+.edit-btn:hover { background: #f5f0ea; }
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.cancel-btn {
+  background: none;
+  border: 1px solid #d0c4b0;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 1rem;
+  color: #8a7560;
+  cursor: pointer;
+  font-family: inherit;
+  flex: 1;
+}
+
+.existing-media { margin-bottom: 12px; }
+.existing-label { font-size: 0.8rem; color: #8a7560; margin-bottom: 8px; }
+
+.media-thumb-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.remove-media {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+}
