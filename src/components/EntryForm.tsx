@@ -1,42 +1,59 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function EntryForm({ onSaved }: { onSaved: () => void }) {
   const today = new Date().toISOString().split('T')[0]
   const [date, setDate] = useState(today)
+  const [author, setAuthor] = useState<'Victor' | 'Trang'>('Victor')
   const [high, setHigh] = useState('')
   const [low, setLow] = useState('')
   const [memory, setMemory] = useState('')
-  const [photo, setPhoto] = useState<File | null>(null)
+  const [bestMeal, setBestMeal] = useState('')
+  const [locationName, setLocationName] = useState('')
+  const [khaiMoment, setKhaiMoment] = useState('')
+  const [wouldReturn, setWouldReturn] = useState<'' | 'yes' | 'no' | 'maybe'>('')
+  const [files, setFiles] = useState<File[]>([])
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     setMessage('')
 
-    let photo_url: string | null = null
+    const media_urls: string[] = []
 
-    if (photo) {
-      const ext = photo.name.split('.').pop()
-      const path = `${date}-${Date.now()}.${ext}`
+    for (const file of files) {
+      const ext = file.name.split('.').pop()
+      const path = `${date}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('photos')
-        .upload(path, photo)
+        .upload(path, file)
 
       if (uploadError) {
-        setMessage('Photo upload failed: ' + uploadError.message)
+        setMessage('Upload failed: ' + uploadError.message)
         setSaving(false)
         return
       }
 
       const { data } = supabase.storage.from('photos').getPublicUrl(path)
-      photo_url = data.publicUrl
+      media_urls.push(data.publicUrl)
     }
 
     const { error } = await supabase.from('entries').upsert(
-      { entry_date: date, high, low, memory, photo_url },
+      {
+        entry_date: date,
+        author,
+        high,
+        low,
+        memory,
+        media_urls,
+        best_meal: bestMeal || null,
+        location_name: locationName || null,
+        khai_moment: khaiMoment || null,
+        would_return: wouldReturn || null,
+      },
       { onConflict: 'entry_date' }
     )
 
@@ -47,7 +64,12 @@ export default function EntryForm({ onSaved }: { onSaved: () => void }) {
       setHigh('')
       setLow('')
       setMemory('')
-      setPhoto(null)
+      setBestMeal('')
+      setLocationName('')
+      setKhaiMoment('')
+      setWouldReturn('')
+      setFiles([])
+      if (fileRef.current) fileRef.current.value = ''
       onSaved()
     }
     setSaving(false)
@@ -56,6 +78,23 @@ export default function EntryForm({ onSaved }: { onSaved: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="entry-form">
       <h2>New Entry</h2>
+
+      <div className="author-toggle">
+        <button
+          type="button"
+          className={author === 'Victor' ? 'active' : ''}
+          onClick={() => setAuthor('Victor')}
+        >
+          Victor
+        </button>
+        <button
+          type="button"
+          className={author === 'Trang' ? 'active' : ''}
+          onClick={() => setAuthor('Trang')}
+        >
+          Trang
+        </button>
+      </div>
 
       <label>
         Date
@@ -77,13 +116,49 @@ export default function EntryForm({ onSaved }: { onSaved: () => void }) {
         <textarea value={memory} onChange={e => setMemory(e.target.value)} required rows={3} placeholder="Something you want to remember..." />
       </label>
 
+      <div className="section-divider">Optional</div>
+
       <label>
-        Photo (optional)
+        Best meal of the day 🍽️
+        <textarea value={bestMeal} onChange={e => setBestMeal(e.target.value)} rows={2} placeholder="What did you eat?" />
+      </label>
+
+      <label>
+        Where we were 📍
+        <input type="text" value={locationName} onChange={e => setLocationName(e.target.value)} placeholder="City, landmark, neighborhood..." />
+      </label>
+
+      <label>
+        Something Khai did 👦
+        <textarea value={khaiMoment} onChange={e => setKhaiMoment(e.target.value)} rows={2} placeholder="Funny, sweet, memorable..." />
+      </label>
+
+      <label>
+        Would we come back? 🔄
+        <div className="toggle-group">
+          {(['yes', 'no', 'maybe'] as const).map(opt => (
+            <button
+              key={opt}
+              type="button"
+              className={wouldReturn === opt ? 'active' : ''}
+              onClick={() => setWouldReturn(wouldReturn === opt ? '' : opt)}
+            >
+              {opt.charAt(0).toUpperCase() + opt.slice(1)}
+            </button>
+          ))}
+        </div>
+      </label>
+
+      <label>
+        Photos & videos
         <input
+          ref={fileRef}
           type="file"
-          accept="image/*"
-          onChange={e => setPhoto(e.target.files?.[0] ?? null)}
+          accept="image/*,video/mp4,video/quicktime,video/mov"
+          multiple
+          onChange={e => setFiles(Array.from(e.target.files ?? []))}
         />
+        {files.length > 0 && <span className="file-count">{files.length} file{files.length > 1 ? 's' : ''} selected</span>}
       </label>
 
       <button type="submit" disabled={saving}>
